@@ -26,6 +26,8 @@ INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 # These files will have .d instead of .o as the output.
 CPPFLAGS := -g -W  -Wall -std=c++17 -pthread  $(INC_FLAGS) -MMD -MP
 
+LDFLAGS := -pthread  -lssl  -lcrypto
+
 # The final build step.
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
 	$(CXX)  $(CPPFLAGS) $(OBJS) -o $@ $(LDFLAGS)

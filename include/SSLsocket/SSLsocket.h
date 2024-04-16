@@ -23,13 +23,13 @@ public:
     void Destroy();
 
     //int setCurrentSocket(int socket);
-    bool accept(int socket);
-    bool connect(int socket);
+    bool accept(const int socket);
+    bool connect( const int socket);
     void shutdownCurrentSSLsocket();
     std::string receive(const unsigned int bufferSize);
     int send(const std::string& dataTosend);
     bool hasReceivedCertificate() const;
-    bool cmpRemoteHostCert() const;
+    bool cmpRemoteHostCert() const{return false;}
 
 protected:
     SSLsocket(const SSL_METHOD* ssl_method, const std::string& cert_file="", 
@@ -37,6 +37,7 @@ protected:
     ~SSLsocket() {};
 
 private:
+    void freeSSLsocket();
     static SSLsocket * s_pinstance;
     static std::mutex s_mutex;;
 

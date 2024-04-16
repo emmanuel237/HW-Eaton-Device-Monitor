@@ -1,11 +1,15 @@
 
 #include <iostream>
 #include "Socket.h"
+#include "SSLsocket.h"
 #include <string>
 #include <time.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <random>
+#include <nlohmann/json.hpp>
 
+using json = nlohmann::json;
 
 int main(int argc, char *argv[])
 {
@@ -20,39 +24,50 @@ int main(int argc, char *argv[])
     const std::string server_address(argv[1]);
     const unsigned int port_number = std::atoi(argv[2]);
     const std::string device_name(argv[3]);
-    const std::string certificate(argv[4]);
+    const std::string cert_file(argv[4]);
 
-    std::cout << "Configuring Local address  ..." << std::endl;
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    int min = 1;
+    int max = 10000;
+    std::uniform_int_distribution<int> dist(min, max);
+    SSLsocket *ssl_socket;
+    int message_count = 0;
     try
     {
-        Socket tcpClient(port_number, 0, SOCK_STREAM, 0, server_address);
 
-        std::cout << "Creating socket..." << std::endl;
+        ssl_socket = SSLsocket::GetInstance(TLS_client_method(), cert_file);
 
-        if (tcpClient.create() < 0)
+        while (true) 
         {
-            std::cout << "Socket creation failled with error : " << tcpClient.getErroNo() << std::endl;
-            return 1;
-        }
+            Socket tcpClient(port_number, 0, SOCK_STREAM, 0, server_address);
 
-        if (tcpClient.connect() != 0)
-        {
-            std::cout << "Could not connect to the remote server " << std::endl;
-            return 1;
-        }
+            if (tcpClient.create() < 0)
+            {
+                std::cerr << "Socket creation failled with error : " << tcpClient.getErroNo() << std::endl;
+                return 1;
+            }
 
-        while (true)
-        {
-            tcpClient.send(tcpClient.getSocket(), device_name.c_str());
+            if (tcpClient.connect() != 0)
+            {
+                std::cerr << "Could not connect to the remote server " << std::endl;
+                return 1;
+            }
+            ssl_socket->connect(tcpClient.getSocket());
+            ssl_socket->send(std::string(device_name) + "  " + std::to_string(dist(gen)));
+            ssl_socket->receive(1024);
+            tcpClient.close();
+            ssl_socket->shutdownCurrentSSLsocket();
+            std::cout << device_name << " message count " << ++message_count << std::endl;
             sleep(2);
         }
-
-        tcpClient.close();
     }
-    catch (const std::invalid_argument &e)
+    catch (const std::exception &e)
     {
         std::cerr << e.what() << '\n';
-        return 1;
     }
+
+    ssl_socket->Destroy();
     return 0;
 }

@@ -20,7 +20,8 @@ std::mutex SSLsocket::s_mutex;
     m_ssl_method(ssl_method),
     m_cert_file(cert_file),
     m_key_file(key_file),
-    m_ssl_socket(nullptr)
+    m_ssl_socket(nullptr),
+    m_socket(-1)
     {
         SSL_library_init();
         OpenSSL_add_all_algorithms();
@@ -55,14 +56,25 @@ void SSLsocket::Destroy()
     }
 }
 
-bool SSLsocket::connect( int socket)
+bool SSLsocket::connect( const int socket)
 {
     std::lock_guard<std::mutex> lock(s_mutex);
     
     bool retval{false};
 
-    if( m_ssl_method == TLS_client_method() && m_ssl_socket == nullptr )//only a client can connect to a server
+    if( m_ssl_method == TLS_client_method() )//&& m_ssl_socket == nullptr  )//only a client can connect to a server
     {
+        /*
+        if( m_socket != socket)
+         {
+            freeSSLsocket();
+            m_socket = socket;
+         }
+         */
+        if( m_ssl_socket != nullptr )
+        {
+            freeSSLsocket();
+        }
         m_ssl_socket = SSL_new(m_ssl_context);
         if( m_ssl_socket )
         {
@@ -73,22 +85,31 @@ bool SSLsocket::connect( int socket)
             }
             else
             {
-                SSL_shutdown(m_ssl_socket);
-                SSL_free(m_ssl_socket);
-                m_ssl_socket = nullptr;
+                freeSSLsocket();
             }
         }
     }
     return retval;
 }
 
-bool SSLsocket::accept(int socket)
+bool SSLsocket::accept(const int socket)
 {
     std::lock_guard<std::mutex> lock(s_mutex);
 
     bool retval{false};
-    if(m_ssl_method == TLS_server_method() && m_ssl_socket == nullptr )
+    if(m_ssl_method == TLS_server_method() )// && m_ssl_socket == nullptr )
     {
+        /*
+         if( m_socket != socket)
+         {
+            freeSSLsocket();
+            m_socket = socket;
+         }
+         */
+        if( m_ssl_socket != nullptr )
+        {
+            freeSSLsocket();
+        }
          m_ssl_socket = SSL_new(m_ssl_context);
         if( m_ssl_socket )
         {
@@ -99,23 +120,28 @@ bool SSLsocket::accept(int socket)
             }
             else
             {
-                SSL_shutdown(m_ssl_socket);
-                SSL_free(m_ssl_socket);
-                m_ssl_socket = nullptr;
+                freeSSLsocket();
             }
         }       
     }
     return retval;
 }
 
-
+void SSLsocket::freeSSLsocket()
+{
+    if( m_ssl_socket != nullptr )
+    {
+        SSL_shutdown(m_ssl_socket);
+        SSL_free(m_ssl_socket);
+        m_ssl_socket = nullptr;
+        //m_socket = -1;
+    }
+}
 void SSLsocket::shutdownCurrentSSLsocket()
 {
     std::lock_guard<std::mutex> lock(s_mutex);
+    freeSSLsocket();
 
-    SSL_shutdown(m_ssl_socket);
-    SSL_free(m_ssl_socket);
-    m_ssl_socket = nullptr;
 }
 
 int SSLsocket::send(const std::string& dataToSend)

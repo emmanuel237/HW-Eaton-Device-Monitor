@@ -20,15 +20,17 @@ DEPS := $(OBJS:.o=.d)
 # Every folder in ./src will need to be passed to GCC so that it can find header files
 INC_DIRS := $(shell find $(INC_DIR) -type d)
 # Add a prefix to INC_DIRS. So moduleA would become -ImoduleA. GCC understands this -I flag
-INC_FLAGS := $(addprefix -I,$(INC_DIRS))
+INC_FLAGS := $(addprefix -I,$(INC_DIRS))  
 
 # The -MMD and -MP flags together generate Makefiles for us!
 # These files will have .d instead of .o as the output.
-CPPFLAGS := -g -W  -Wall -std=c++17 -pthread  $(INC_FLAGS) -MMD -MP
+CPPFLAGS := -g -W  -Wall -std=c++17  $(INC_FLAGS) -MMD -MP 
+
+LDFLAGS := -pthread  -lssl  -lcrypto
 
 # The final build step.
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
-	$(CXX)  $(CPPFLAGS) $(OBJS) -o $@ $(LDFLAGS)
+	$(CXX)  $(CPPFLAGS) $(OBJS) -o $@ $(LDFLAGS)  
 
 # Build step for C source
 $(BUILD_DIR)/%.c.o: %.c
