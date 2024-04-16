@@ -1,0 +1,65 @@
+        -:    0:Source:include/Socket/Socket.h
+        -:    1:#ifndef __SOCKET_H__
+        -:    2:#define __SOCKET_H__
+        -:    3:
+        -:    4:#include <sys/types.h>
+        -:    5:#include <sys/socket.h>
+        -:    6:#include <netinet/in.h>
+        -:    7:#include <arpa/inet.h>
+        -:    8:#include <netdb.h>
+        -:    9:#include <unistd.h>
+        -:   10:#include <error.h>
+        -:   11:#include <errno.h>
+        -:   12:#include <string>
+        -:   13:#include <cstring>
+        -:   14:
+        -:   15:class Socket
+        -:   16:{
+        -:   17:
+        -:   18:public:
+        -:   19:    Socket(const unsigned int portNumber, const unsigned int ipAddrType, const unsigned int sockType,
+        -:   20:     const unsigned int flags, const std::string&  remoteHostAddress = std::string() );
+        -:   21:
+        -:   22:     int create();
+        -:   23:     int bind();
+        -:   24:     int listen(unsigned const int maxNberConnections);
+        -:   25:     int accept();
+        -:   26:     int connect();
+        -:   27:     std::string receive(const int socket, const unsigned int bufferSize);
+        -:   28:     int send(const int socket, const std::string& dataToSend);
+        -:   29:     void close(const int socket=-1);
+    #####:   30:     std::string getLastRemoteClientAddress() const
+        -:   31:     {
+    #####:   32:        return m_last_connected_client_address;
+        -:   33:     }
+        -:   34:
+    #####:   35:     int getErroNo() const 
+        -:   36:     {
+    #####:   37:            return errno;
+        -:   38:     }
+        -:   39:
+    #####:   40:     int getSocket() const
+        -:   41:     {
+    #####:   42:        return m_socket;
+        -:   43:     }
+        -:   44:
+        -:   45:    ~Socket();
+        -:   46:
+        -:   47:    Socket() = delete;
+        -:   48:    Socket(const Socket& other ) = delete;
+        -:   49:    Socket& operator = (const Socket& other ) = delete;
+        -:   50:protected:
+        -:   51:
+        -:   52:private:
+        -:   53:
+        -:   54:std::string m_last_connected_client_address;
+        -:   55:bool m_is_closed;
+        -:   56:int m_socket; 
+        -:   57:struct addrinfo *m_address;
+        -:   58:
+        -:   59:};
+        -:   60:
+        -:   61:
+        -:   62:#endif
+        -:   63:
+        -:   64:
