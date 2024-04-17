@@ -4,12 +4,13 @@
 #include <string>
 #include <iostream>
 /* Running some of these unit tests requires an internet connection*/
+const std::string CERT_FILE("certificates/cert.pem");
 
 TEST_GROUP(SSLsocket)
 {
     void setup()
     {
-        SSLsocket::GetInstance();
+        SSLsocket::GetInstance(TLS_client_method(), CERT_FILE);
     }
     void teardown()
     {
@@ -47,6 +48,15 @@ TEST(SSLsocket, SSLclientReceivesCertificate)
      CHECK( SSLsocket::GetInstance()->hasReceivedCertificate() == true );
 }
 
+TEST(SSLsocket, UnmatchingCertificates)
+{
+    Socket httpsClient(443, 0, SOCK_STREAM, 0, "example.org" );
+    httpsClient.create();
+    httpsClient.connect();
+     SSLsocket::GetInstance()->connect(httpsClient.getSocket());
+
+     CHECK(SSLsocket::GetInstance()->cmpRemoteHostCert() == false );
+}
 
 TEST(SSLsocket, SSLclientSend)
 {
@@ -82,3 +92,4 @@ TEST(SSLsocket, SSLclientReceive)
 
     CHECK( server_reponse.size() > 0 );
 }
+

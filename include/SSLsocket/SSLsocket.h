@@ -29,7 +29,7 @@ public:
     std::string receive(const unsigned int bufferSize);
     int send(const std::string& dataTosend);
     bool hasReceivedCertificate() const;
-    bool cmpRemoteHostCert() const{return false;}
+    bool cmpRemoteHostCert();
 
 protected:
     SSLsocket(const SSL_METHOD* ssl_method, const std::string& cert_file="", 
@@ -38,6 +38,7 @@ protected:
 
 private:
     void freeSSLsocket();
+    bool  compareCertificates(X509* cert1, X509* cert2);
     static SSLsocket * s_pinstance;
     static std::mutex s_mutex;;
 
@@ -45,9 +46,7 @@ private:
     const SSL_METHOD * m_ssl_method;
     std::string m_cert_file;
     std::string m_key_file;
-    SSL * m_ssl_socket;
-    int m_socket;
-    
+    SSL * m_ssl_socket;    
 };
 
 

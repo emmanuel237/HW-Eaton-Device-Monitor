@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <string>
 #include <cstring>
-
+#include <stdio.h>
 SSLsocket* SSLsocket::s_pinstance{nullptr};
 std::mutex SSLsocket::s_mutex;
 
@@ -20,8 +20,7 @@ std::mutex SSLsocket::s_mutex;
     m_ssl_method(ssl_method),
     m_cert_file(cert_file),
     m_key_file(key_file),
-    m_ssl_socket(nullptr),
-    m_socket(-1)
+    m_ssl_socket(nullptr)
     {
         SSL_library_init();
         OpenSSL_add_all_algorithms();
@@ -62,15 +61,8 @@ bool SSLsocket::connect( const int socket)
     
     bool retval{false};
 
-    if( m_ssl_method == TLS_client_method() )//&& m_ssl_socket == nullptr  )//only a client can connect to a server
+    if( m_ssl_method == TLS_client_method() )//only a client can connect to a server
     {
-        /*
-        if( m_socket != socket)
-         {
-            freeSSLsocket();
-            m_socket = socket;
-         }
-         */
         if( m_ssl_socket != nullptr )
         {
             freeSSLsocket();
@@ -97,15 +89,8 @@ bool SSLsocket::accept(const int socket)
     std::lock_guard<std::mutex> lock(s_mutex);
 
     bool retval{false};
-    if(m_ssl_method == TLS_server_method() )// && m_ssl_socket == nullptr )
+    if(m_ssl_method == TLS_server_method() )
     {
-        /*
-         if( m_socket != socket)
-         {
-            freeSSLsocket();
-            m_socket = socket;
-         }
-         */
         if( m_ssl_socket != nullptr )
         {
             freeSSLsocket();
@@ -134,14 +119,12 @@ void SSLsocket::freeSSLsocket()
         SSL_shutdown(m_ssl_socket);
         SSL_free(m_ssl_socket);
         m_ssl_socket = nullptr;
-        //m_socket = -1;
     }
 }
 void SSLsocket::shutdownCurrentSSLsocket()
 {
     std::lock_guard<std::mutex> lock(s_mutex);
     freeSSLsocket();
-
 }
 
 int SSLsocket::send(const std::string& dataToSend)
@@ -177,6 +160,64 @@ bool SSLsocket::hasReceivedCertificate() const
 
     return retval;
 }
+
+ bool SSLsocket::cmpRemoteHostCert() 
+ {
+    bool retval{false};
+        if(m_cert_file.empty() == false && hasReceivedCertificate() == true )
+        {
+            X509* server_cert{nullptr};
+            X509* local_cert{nullptr};
+
+            server_cert = SSL_get_peer_certificate(m_ssl_socket);
+
+            FILE *local_cert_file =  fopen(m_cert_file.c_str(), "r");
+            if(local_cert_file)
+            {
+                local_cert = PEM_read_X509(local_cert_file, NULL , NULL, NULL);
+                fclose(local_cert_file);
+            }
+
+            if(server_cert != nullptr && local_cert != nullptr )
+            {
+                retval = compareCertificates(server_cert, local_cert );
+            }
+            else
+            {
+                retval = false;
+            }
+        }
+        return retval;
+ }
+
+ bool SSLsocket::compareCertificates(X509 *cert1, X509 *cert2)
+ {
+    bool retVal{true};
+
+     char *cert1_subject = X509_NAME_oneline(X509_get_subject_name(cert1), NULL, 0);
+     char *cert2_subject = X509_NAME_oneline(X509_get_subject_name(cert2), NULL, 0);
+
+     if (strcmp(cert1_subject, cert2_subject) != 0)
+     {
+         retVal = false;
+     }
+
+     EVP_PKEY *cert1_pubkey = X509_get_pubkey(cert1);
+     EVP_PKEY *cert2_pubkey = X509_get_pubkey(cert2);
+
+     if (EVP_PKEY_cmp(cert1_pubkey, cert2_pubkey) != 1)
+     {
+         retVal = false;
+     }
+
+     OPENSSL_free(cert1_subject);
+     OPENSSL_free(cert2_subject);
+     EVP_PKEY_free(cert1_pubkey);
+     EVP_PKEY_free(cert2_pubkey);
+
+     return retVal;
+ }
+
 SSLsocket *SSLsocket::GetInstance(const SSL_METHOD* ssl_method, const std::string& cert_file, const std::string& key_file )
 {
     std::lock_guard<std::mutex> lock(s_mutex);

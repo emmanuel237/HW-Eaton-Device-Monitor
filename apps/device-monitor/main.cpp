@@ -13,6 +13,7 @@
 #include <deque>
 #include <mutex>
 #include <nlohmann/json.hpp>
+#include <map>
 
 using json = nlohmann::json;
 
@@ -154,7 +155,7 @@ void tcpConnectionsHandler(const unsigned int portNumber)
 
         std::cout << "Listening ..." << std::endl;
 
-        if (tcpServer.listen(50) < 0)
+        if (tcpServer.listen(100) < 0)
         {
             std::cerr << "Failled to listen to the socket " << std::endl;
             return;
@@ -168,22 +169,21 @@ void tcpConnectionsHandler(const unsigned int portNumber)
 
               if( ssl_socket->accept(client_socket ) )
             {
-                 constexpr unsigned int BUFFER_SIZE = 2048;
-                 std::string dataReceived = ssl_socket->receive(BUFFER_SIZE);
-                 if (dataReceived.empty() == false )
+                 constexpr unsigned int BUFFER_SIZE = 1024;
+                 std::string data_received;
+                data_received = ssl_socket->receive(BUFFER_SIZE);
+                 if(data_received.empty() == false && data_received.at(data_received.size() - 1)  == '\n')
                  {
-                        data_buffer.push_front(dataReceived);
-                        tcpServer.close(client_socket);
-                        ssl_socket->shutdownCurrentSSLsocket();
-                        
+                        data_received = data_received.substr(0, data_received.size() - 1);//removing the leading "\n"
+                        data_buffer.push_front(data_received);
                  }
-                 else
-                 {
-                    //close local socket
-                    //tcpServer.close(client_socket );
-                 }
+
+                ssl_socket->send("OK");
+                 tcpServer.close(client_socket);
+                 ssl_socket->shutdownCurrentSSLsocket();
              }
-        }
+     }
+        tcpServer.close();
         ssl_socket->shutdownCurrentSSLsocket();
 }
 
@@ -201,15 +201,30 @@ int  main(int argc, char* argv[])
     SSLsocket *ssl_socket = SSLsocket::GetInstance(TLS_server_method(), cert_file, key_file);
     std::thread communicationThread(tcpConnectionsHandler, port_number);
 
+    std::map<std::string, unsigned long> message_count;
+     
     while (true)
     {
         std::this_thread::sleep_for(std::chrono::seconds(2));
         if(data_buffer.size() > 0 )
         {
-            console_mutex.lock();
-            std::cout << "Data Received : " << data_buffer.back() << std::endl;
+            //std::cout << "Data Received : " << data_buffer.back() << std::endl;
+            json parsed_data= json::parse( data_buffer.back() );
+             data_buffer.pop_back();
+            std::string device_name = parsed_data["DeviceName"];
+            //int measurement = parsed_data["Measurement"];
+
+            message_count[device_name] = message_count[device_name] + 1;
+             console_mutex.lock();
+             std::cout << "=========== Message Count ================" << std::endl;
+            int total = 0;
+            for( const auto& msg_count : message_count )
+            {
+                    std::cout << msg_count.first  << " : " << msg_count.second << std::endl;;
+                    total = total + msg_count.second;  
+            }
+            std::cout << "Total message count : " << total << std::endl;
             console_mutex.unlock();
-            data_buffer.pop_back();
         }
     }
 
