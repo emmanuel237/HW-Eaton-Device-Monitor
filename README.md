@@ -101,6 +101,9 @@ Before building export the CppUTest directory using
 ```
 export CPPUTEST_HOME=<CppUtest directory>
 ```
+
+**Please be aware that some unit tests require an internet connection.**
+
 You can the use the following command (from the repository's root folder) to build and run unittests 
 ```
 make -f MakeAndRunUnitTests.mk [gcov]
