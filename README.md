@@ -118,6 +118,10 @@ You can add (optional) gcov to generate code coverage statistics. As for now the
  src/SSLsocket/SSLsocket.cpp : 71.56%  
  src/Socket/Socket.cpp : 84.21% 
 
+ # Demonstration
+ There is a video demonstrating our code in action (https://github.com/emmanuel237/HW-Eaton-Device-Monitor/blob/main/demonstration.zip) , the setup used in this video is given by the picture bellow
+ ![Alt text](https://github.com/emmanuel237/HW-Eaton-Device-Monitor/blob/main/demo-setup.jpg)
+ 
  # Possible Improvements
  As for now, the reception of incoming connections is performed in a single thread, this can be handle in multiple threads (one thread for each connection).
  
