@@ -18,13 +18,13 @@ The solution should be posted on GitHub or a similar page for a review.
 Please add Makefile/CMakeLists and documentation explaining us how to run your code.
 
 # Our Proposed Solution
-Project consists of 2 executables, one for the Device Monitor, and a second one for Devices.
-The Device Monitor is a TCP server that listen from incoming connections from Devices (clients).
-The Devices connect to the server and send their name and measurement (not used further) serialized using JSON.
+The Project consists of 2 executables, one for the Device Monitor, and a second one for Devices.
+The Device Monitor is a TCP server that listens to incoming connections from Devices (clients).
+The Devices connect to the server and send their name and a measurement (not used further) serialized using JSON.
 The Device Monitor deserializes the received data, and counts messages according to their senders.
 # About Security
 A TLS layer is added on top of the TCP sockets, we implemented a symetric encryption scheme. Devices have a copy of the 
-server's certificate and check their local copies against the one sent by the server after a connection, this way, 
+server's certificate and check their local copies against the one sent by the server after a connection; this way, 
 the server cannot be impersonated.
 
 # Repository Tree
@@ -77,7 +77,7 @@ The excutable will be saved under `build_monitor/device-monitor.exe`. It can the
 ```
 ./build_monitor/device-monitor.exe 8081 certificates/cert.pem certificates/key.pem
 ```
-You can replace the port number and certificate files at your convienience.
+You can replace the port number (8081) and certificate files at your convienience.
 
 From the root folder of the repository, use the following command to build the Device executable 
 ```
@@ -88,21 +88,26 @@ The executable will be saved under `build_device/device.exe` , it can then be ru
 ```
 ./build_device/device.exe localhost 8081 Device1 certificates/cert.pem 
 ```
-localhost is the address of the computer on which the server is running.
+localhost is the address of the computer on which the server is running, 8081 the port number it (the server) is listening to.
 
 The remote port should be the same as the the one being listen to by the server.
 
-The certificate file should be the same as the one used by the server.
+The certificate  file (cert.pem) should be the same as the one used by the server.
+
+You can generate your own self-signed certificate/private key using the following command : 
+```
+openssl req -x509 -newkey rsa:2048 -nodes -sha256 -keyout key.pem -out cert.pem -days 365
+```
 
 # Building And Running Unit Tests
 Building and running unit tests requires CppUTest. Download and build from source as described in http://cpputest.github.io/
 
-Before building export the CppUTest directory using 
+Before building unit tests you have to export the CppUTest directory using 
 ```
 export CPPUTEST_HOME=<CppUtest directory>
 ```
 
-**Please be aware that some unit tests require an internet connection.**
+**Please be aware that some unit tests require an internet connection to run.**
 
 You can the use the following command (from the repository's root folder) to build and run unittests 
 ```
