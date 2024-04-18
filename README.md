@@ -88,7 +88,8 @@ The executable will be saved under `build_device/device.exe` , it can then be ru
 ```
 ./build_device/device.exe localhost 8081 Device1 certificates/cert.pem 
 ```
-localhost is the address of the computer on which the server is running, 8081 the port number it (the server) is listening to.
+localhost is the address of the computer on which the server is running, 8081 the port number it (the server) is listening to. 
+"Device1" is the devices's name (you can change it at you convenience).
 
 The remote port should be the same as the the one being listen to by the server.
 
