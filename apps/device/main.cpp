@@ -38,6 +38,7 @@ int main(int argc, char *argv[])
     {
 
         ssl_socket = SSLsocket::GetInstance(TLS_client_method(), cert_file);
+        constexpr unsigned int BUFFER_SIZE = 1024;
 
         while (true)
         {
@@ -56,22 +57,22 @@ int main(int argc, char *argv[])
             }
 
             ssl_socket->connect(tcpClient.getSocket());
-            if (ssl_socket->cmpRemoteHostCert() == true)
+            if ( ssl_socket->cmpRemoteHostCert() == true)
             {
-                json data_to_send;
-                data_to_send["DeviceName"] = device_name;
-                data_to_send["Measurement"] = dist(gen);
-                std::string data_to_send_json = data_to_send.dump();
-                data_to_send_json = data_to_send_json + "\n";
-
-                ssl_socket->send(data_to_send_json);
-                ssl_socket->receive(1024);
+                json data_to_send_json;
+                data_to_send_json["DeviceName"] = device_name;
+                data_to_send_json["Measurement"] = dist(gen);
+                std::string data_to_send = data_to_send_json.dump() + "\n";
+                ssl_socket->send(data_to_send);
+                ssl_socket->receive(BUFFER_SIZE);
                 tcpClient.close();
                 ssl_socket->shutdownCurrentSSLsocket();
                 std::cout << device_name << " message count " << ++message_count << std::endl;
             }
             else
             {
+                ssl_socket->send("No data");
+                ssl_socket->receive(BUFFER_SIZE);
                 tcpClient.close();
                 ssl_socket->shutdownCurrentSSLsocket();
                 std::cerr << "Remote Server Authentication failled, no data will be sent to remote party" << std::endl;
